@@ -10,22 +10,94 @@ class ScrapeCondaJob < ActiveJob::Base
   URL_PATTERN = "https://www.conda.eu/startup/?list_page=%d&action=ajax_list_load&type=projects&wrapper_style=items_full&filter_region_slug=eu&filter_company_id=&filter_status=&filter_orderby=menu_order&list_posts_per_page=10"
 
   def perform(*args)
-    uri = URL_PATTERN % 1
-    data = fetch_uri uri
-    #data = open("sample-scrape.html")
+    page = 1
+    status = {
+      :status => "ok"
+    }
+    found_projects_count = 0
 
-    doc = Nokogiri::HTML(data, nil, 'utf-8')
+    #lastfetched = Project
+
+    begin
+    while true do
+      data = fetch_uri(URL_PATTERN % page)
+
+      if data.nil? then raise "empty data" end
+
+      File.open(Rails.root + "tmp/scrape-data/page-#{page}.html", 'wb') do |f|
+        f.write(data)
+        p "wrote to #{f.inspect}"
+      end
+
+      found_projects = parse data
+
+      break if found_projects.empty?
+      page = page.succ
+      next
+
+      found_projects.each do |project_data|
+        project = Project.new(project_data)
+        project.source = "conda.eu"
+
+        begin
+        if not project.save then
+          pp project.errors
+          break
+        else
+          found_projects_count = found_projects_count.succ
+        end
+        rescue ActiveRecord::RecordNotUnique
+          #break
+        end
+      end
+
+      page = page.succ
+    end
+
+    status[:found_projects] = found_projects_count
+    status
+
+    rescue Error => e
+      status[:status] = "error"
+      status[:error]  = e.message
+    end
+
+    status
+  end
+
+
+
+  private
+
+  def parse fragment
+    doc = Nokogiri::HTML(fragment, nil, 'utf-8')
     found_projects = []
 
-    doc.xpath('//section').each do |section|
+    sections = doc.css('section')
+
+    if sections.nil?
+      pp fragment
+      found_projects
+    end
+
+    pp sections
+
+    sections.each do |section|
       project = {}
-      project[:title] = section.at_css('.en_mdl_project_tile__title_wrapper h3').content
-      location = section.at_css('span.en_icon.en_icon--pin')
+      title = section.at_css('.en_mdl_project_tile__title_wrapper h3')
+
+      if title.nil? then
+        pp "EMPTY TITLE"
+        pp section
+        next
+      end
 
       project[:url] = "https://www.conda.eu" + \
         section.at_css('a.en_mdl_project_tile__inner').attribute('href').content
 
+      location = section.at_css('span.en_icon.en_icon--pin')
       project[:location] = location.content unless location.nil?
+
       has_started = true
 
       # IN KÜRZE badge
@@ -47,13 +119,15 @@ class ScrapeCondaJob < ActiveJob::Base
         project[:investors_count]   = graph.attribute('data-en-graph-number-investors').content
       end
 
+      project[:has_started] = has_started
+
       found_projects << project
     end
     found_projects
   end
 
-  private
   def fetch_uri uri_str
+    p "fetching #{uri_str}"
     uri = URI.parse(uri_str)
     #base_uri = "#{uri.scheme}://#{uri.host}#{uri.path}"
 
@@ -69,6 +143,11 @@ class ScrapeCondaJob < ActiveJob::Base
       req['Referer'] = 'https://www.conda.eu/startup/'
 
       resp = http.request req
+
+      if resp.code != "200"
+        raise "fetch error"
+      end
+
       body = resp.body
     end
 
