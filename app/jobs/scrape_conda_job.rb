@@ -16,8 +16,6 @@ class ScrapeCondaJob < ActiveJob::Base
     }
     found_projects_count = 0
 
-    #lastfetched = Project
-
     begin
     while true do
       data = fetch_uri(URL_PATTERN % page)
@@ -27,10 +25,15 @@ class ScrapeCondaJob < ActiveJob::Base
       found_projects = CondaSectionParser.parse data
 
       break if found_projects.empty?
+
       page = page.succ
       found_projects.each do |project_data|
-        project = Project.new(project_data)
-        project.source = "conda.eu"
+        project = Project.find_or_create_by(
+          source: "conda.eu",
+          title: project_data[:title]
+        )
+
+        project.update(project_data)
 
         begin
         if not project.save then
