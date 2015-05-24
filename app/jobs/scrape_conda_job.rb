@@ -26,7 +26,6 @@ class ScrapeCondaJob < ActiveJob::Base
 
       break if found_projects.empty?
 
-      page = page.succ
       found_projects.each do |project_data|
         project = Project.find_or_create_by(
           source: "conda.eu",
@@ -35,15 +34,12 @@ class ScrapeCondaJob < ActiveJob::Base
 
         project.update(project_data)
 
-        begin
         if not project.save then
-          pp project.errors
-          break
+          Rails.logger.warning "Could not save project"
+          Rails.logger.warning project.errors.inspect
+          continue
         else
           found_projects_count = found_projects_count.succ
-        end
-        rescue ActiveRecord::RecordNotUnique
-          #break
         end
       end
 
@@ -66,7 +62,7 @@ class ScrapeCondaJob < ActiveJob::Base
   private
 
   def fetch_uri uri_str
-    p "fetching #{uri_str}"
+    Rails.logger.info "fetching #{uri_str}"
     uri = URI.parse(uri_str)
     #base_uri = "#{uri.scheme}://#{uri.host}#{uri.path}"
 
