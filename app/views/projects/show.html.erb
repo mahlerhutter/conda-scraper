@@ -1,0 +1,49 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Source:</strong>
+  <%= @project.source %>
+</p>
+
+<p>
+  <strong>Title:</strong>
+  <%= @project.title %>
+</p>
+
+<p>
+  <strong>Url:</strong>
+  <%= @project.url %>
+</p>
+
+<p>
+  <strong>Location:</strong>
+  <%= @project.location %>
+</p>
+
+<p>
+  <strong>Has started:</strong>
+  <%= @project.has_started %>
+</p>
+
+<p>
+  <strong>Funding threshold:</strong>
+  <%= @project.funding_threshold %>
+</p>
+
+<p>
+  <strong>Funding limit:</strong>
+  <%= @project.funding_limit %>
+</p>
+
+<p>
+  <strong>Funding current:</strong>
+  <%= @project.funding_current %>
+</p>
+
+<p>
+  <strong>Investors count:</strong>
+  <%= @project.investors_count %>
+</p>
+
+<%= link_to 'Edit', edit_project_path(@project) %> |
+<%= link_to 'Back', projects_path %>

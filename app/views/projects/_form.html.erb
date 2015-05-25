@@ -1,0 +1,53 @@
+<%= form_for(@project) do |f| %>
+  <% if @project.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@project.errors.count, "error") %> prohibited this project from being saved:</h2>
+
+      <ul>
+      <% @project.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :source %><br>
+    <%= f.text_field :source %>
+  </div>
+  <div class="field">
+    <%= f.label :title %><br>
+    <%= f.text_field :title %>
+  </div>
+  <div class="field">
+    <%= f.label :url %><br>
+    <%= f.text_field :url %>
+  </div>
+  <div class="field">
+    <%= f.label :location %><br>
+    <%= f.text_field :location %>
+  </div>
+  <div class="field">
+    <%= f.label :has_started %><br>
+    <%= f.check_box :has_started %>
+  </div>
+  <div class="field">
+    <%= f.label :funding_threshold %><br>
+    <%= f.number_field :funding_threshold %>
+  </div>
+  <div class="field">
+    <%= f.label :funding_limit %><br>
+    <%= f.number_field :funding_limit %>
+  </div>
+  <div class="field">
+    <%= f.label :funding_current %><br>
+    <%= f.number_field :funding_current %>
+  </div>
+  <div class="field">
+    <%= f.label :investors_count %><br>
+    <%= f.number_field :investors_count %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>
